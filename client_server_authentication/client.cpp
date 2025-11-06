@@ -7,14 +7,14 @@
 #include <cstring>
 #include <vector>
 
-using std::cout, std::cerr, std::endl;
+using std::cout, std::cerr, std::endl, std::string;
 
 #define MAXBUF 1024
-struct sockaddr_in server_addr; // struct to hold server IP and port
-int sock;                       // Socket file descriptor
+struct sockaddr_in server_addr; 
+int sock;                       
 int portnum = 13000;        
 std::vector<char> buffer(MAXBUF);
-int n;                          // stores number of bytes sent/received
+int n;                          
 
 int main() {
   
@@ -25,16 +25,15 @@ int main() {
             cerr << "Error creating socket" << endl;
             return -1;
         }
-            // Get server address
-        struct hostent *server;           // struct for host info
-        server = gethostbyname("localhost"); // resolve "localhost" to IP address
+
+        struct hostent *server;
+        server = gethostbyname("localhost");
         if (server == NULL) {
             cerr << "No such host" << endl;
             close(sock);                 
             return -1;
         }
 
-        // Prepare the sockaddr_in structure
         server_addr.sin_family = AF_INET;   
         memcpy(&server_addr.sin_addr.s_addr, server->h_addr, server->h_length);    // copy resolved IP address    
         server_addr.sin_port = htons(portnum); 
@@ -50,17 +49,30 @@ int main() {
     
 
   
-        const char *username = "ClientUser";
+        // User credientials 
+        string userCreditials = "user1:passw0rd";
 
-
-        n = send(sock, username, strlen(username), 0);
+        // recieve authentication if server accepted or rejected the credentials
+        int n = send(sock, userCreditials.data(), userCreditials.size(), 0);
         if (n < 0) {
-            cerr << "Send failed" << endl;
-            close(sock);                  
+            cerr << "Error sending data" << endl;
+            close(sock);                 
             return -1;
         }
-        cout << "Message sent to server" << endl;
-        
+        cout << "Sent credentials to server" << endl;
+
+
+
+        n = recv(sock, buffer.data(), MAXBUF, 0);
+        if (n < 0) {
+            cerr << "Error receiving data" << endl;
+            close(sock);                 
+            return -1;
+        }
+        buffer[n] = '\0';
+        cout << "Server response: " << buffer.data() << endl;
+
+
 
         close(sock);    
 

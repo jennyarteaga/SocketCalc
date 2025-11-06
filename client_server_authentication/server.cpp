@@ -7,39 +7,35 @@
 #include <vector>
 #include <cstring>
 
-using std::cout, std::cerr, std::endl;
+using std::cout, std::cerr, std::endl, std::string;
 
 
 
 #define MAXBUF 1024
 
-struct sockaddr_in server_addr, client_addr; // server and client address structs
-int server_sock, client_sock;                // server and client socket descriptors
+struct sockaddr_in server_addr, client_addr;
+int server_sock, client_sock;                
 int portnum = 13000;                         
-std::vector<char> buffer(MAXBUF);                      // buffer for received messages
-int n;                                       // stores number of bytes sent/received
+std::vector<char> buffer(MAXBUF);                     
+int n;                                     
 
 
 int main() {
     // Create socket
-    server_sock = socket(AF_INET, SOCK_STREAM, 0); // AF_INET = IPv4, SOCK_STREAM = TCP, protocol 0 = default
+    server_sock = socket(AF_INET, SOCK_STREAM, 0); 
     if (server_sock < 0) {
         std::cerr << "Error creating socket" << std::endl;
         return -1;
     }
 
-    // Prepare the sockaddr_in struct so binding knows where to go
-    server_addr.sin_family = AF_INET;         // IPv4
-    server_addr.sin_addr.s_addr = inet_addr("127.0.0.1"); // Bind to localhost (loopback address)
-    server_addr.sin_port = htons(portnum);    // Convert port to network byte order
+    server_addr.sin_family = AF_INET;         
+    server_addr.sin_addr.s_addr = inet_addr("127.0.0.1"); 
+    server_addr.sin_port = htons(portnum);    
 
-    // cast the struct server_addr (which is a ipv4 info) to (struct sockaddr *) because bind takes a pointer 
     struct sockaddr *server = (struct sockaddr *)&server_addr;
 
-    // get the size of the struct
     socklen_t server_len = sizeof(server_addr);
 
-    // Bind the socket to the address and port number
     int bind_status = (::bind(server_sock, server, server_len));
 
     if (bind_status < 0) {
@@ -49,15 +45,12 @@ int main() {
     }
     
 
-    // Listen
     listen(server_sock, 2);                   
     cout << "Server listening on port " << portnum << endl;
 
-    // cast the struct client_addr to (struct sockaddr *) because accept takes a pointer
     struct sockaddr *client = (struct sockaddr *)&client_addr;
     
     
-    // length of the client address struct
     socklen_t client_len = sizeof(client_addr); 
 
         cout << "Waiting for a client to connect..." << endl;
@@ -75,28 +68,37 @@ int main() {
 
 
 
-        n = recv(client_sock, buffer.data(), buffer.size() - 1, 0); 
-
+        // recieve authentication if server accepted or rejected the credentials
+        n = recv(client_sock, buffer.data(), MAXBUF, 0);
         if (n < 0) {
-            cerr << "Receive failed" << endl;
+            cerr << "Error receiving data" << endl;
             close(client_sock);                 
             close(server_sock);                 
             return -1;
         }
-        buffer[n] = '\0';    
+        buffer[n] = '\0';
+        cout << "Received user credentials from client: " << buffer.data() << endl;
+       
+        string validCreds = "user1:passw0rd";
+        string reply;
 
+        if (buffer.data() == validCreds) {
+            reply = "Accepted";
+        } else {
+        reply = "Rejected";
+     }
 
-
-        cout << "Message received from client: " << buffer.data() << endl;
-        const char *reply = "Message received";
-        n = send(client_sock, reply, strlen(reply), 0); 
+     // send reply to client
+        n = send(client_sock, reply.data(), reply.size(), 0);
         if (n < 0) {
-            cerr << "Send failed" << endl;
-            close(client_sock);                
+            cerr << "Error sending data" << endl;
+            close(client_sock);                 
             close(server_sock);                 
             return -1;
         }
-    cout << "Reply sent" << endl;
+        cout << "Sent authentication reply to client: " << reply << endl;
+        
+        
           
 
     close(client_sock);                     
