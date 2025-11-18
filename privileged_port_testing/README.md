@@ -7,3 +7,4 @@ A simple TCP client and server program in C++ that connects to a well known port
 1. Compile code using g++
 2. Run file
 Example: g++ server.cpp -o server g++ client.cpp -o client
+IF RUNNING ON WINDOWS GIVE PERMISSION BY: setcap 'cap_net_bind_services =+ ep'
